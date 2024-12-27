@@ -9,6 +9,7 @@
             background: #1a1a1a;
             color: white;
             font-family: Arial, sans-serif;
+            margin: 0;
         }
 
         .game-container {
@@ -65,6 +66,28 @@
             color: #4CAF50;
         }
 
+        .controls {
+            display: flex;
+            justify-content: space-between;
+            width: 400px;
+            margin: 10px;
+        }
+
+        .control-button {
+            width: 100px;
+            height: 50px;
+            background: #4CAF50;
+            color: white;
+            font-size: 18px;
+            border: none;
+            border-radius: 10px;
+            cursor: pointer;
+        }
+
+        .control-button:active {
+            background: #45a049;
+        }
+
         .effect {
             position: absolute;
             pointer-events: none;
@@ -99,54 +122,36 @@
     <div class="game-container">
         <div id="player"></div>
     </div>
-    <div id="instructions">Use LEFT/RIGHT arrows or A/D keys to move</div>
+    <div class="controls">
+        <button class="control-button" id="left-button">Left</button>
+        <button class="control-button" id="right-button">Right</button>
+    </div>
 
     <script>
         const player = document.getElementById('player');
         let score = 0;
         let lives = 3;
         let playerX = 160;
-        let baseSpeed = 8;
-        let speed = baseSpeed;
-        let keys = {};
-        let isShielded = false;
-        let momentum = 0;
-        const friction = 0.95;
-        const acceleration = 0.5;
+        const speed = 8;
+        const keys = {};
+        let isMovingLeft = false;
+        let isMovingRight = false;
 
         function updateStats() {
-            document.getElementById('score').innerText = `Score: ${score}`;
-            document.getElementById('lives').innerText = `Lives: ${lives}`;
+            document.getElementById('score').innerText = Score: ${score};
+            document.getElementById('lives').innerText = Lives: ${lives};
         }
 
-        function showEffect(x, y, text, color) {
-            const effect = document.createElement('div');
-            effect.className = 'effect';
-            effect.style.left = x + 'px';
-            effect.style.top = y + 'px';
-            effect.style.color = color;
-            effect.textContent = text;
-            document.querySelector('.game-container').appendChild(effect);
-            setTimeout(() => effect.remove(), 1000);
-        }
-
-        function activateShield() {
-            if (!isShielded) {
-                isShielded = true;
-                player.style.background = 'linear-gradient(45deg, #FF1493, #FF69B4)';
-                const shield = document.createElement('div');
-                shield.className = 'shield';
-                shield.style.width = '86px';
-                shield.style.height = '36px';
-                shield.style.left = '-3px';
-                shield.style.top = '-3px';
-                player.appendChild(shield);
-                setTimeout(() => {
-                    isShielded = false;
-                    player.style.background = 'linear-gradient(45deg, #2196F3, #03A9F4)';
-                    shield.remove();
-                }, 5000);
+        function gameLoop() {
+            if ((keys['arrowleft'] || keys['a'] || isMovingLeft) && playerX > 0) {
+                playerX -= speed;
             }
+            if ((keys['arrowright'] || keys['d'] || isMovingRight) && playerX < 320) {
+                playerX += speed;
+            }
+
+            player.style.left = playerX + 'px';
+            requestAnimationFrame(gameLoop);
         }
 
         document.addEventListener('keydown', (e) => {
@@ -157,29 +162,29 @@
             keys[e.key.toLowerCase()] = false;
         });
 
-        function gameLoop() {
-            if ((keys['arrowleft'] || keys['a']) && playerX > 0) {
-                momentum = Math.max(momentum - acceleration, -speed);
-            } else if ((keys['arrowright'] || keys['d']) && playerX < 320) {
-                momentum = Math.min(momentum + acceleration, speed);
-            } else {
-                momentum *= friction;
-            }
+        document.getElementById('left-button').addEventListener('touchstart', () => {
+            isMovingLeft = true;
+        });
 
-            playerX = Math.max(0, Math.min(320, playerX + momentum));
-            player.style.left = playerX + 'px';
-            requestAnimationFrame(gameLoop);
-        }
-        
-        gameLoop();
+        document.getElementById('left-button').addEventListener('touchend', () => {
+            isMovingLeft = false;
+        });
+
+        document.getElementById('right-button').addEventListener('touchstart', () => {
+            isMovingRight = true;
+        });
+
+        document.getElementById('right-button').addEventListener('touchend', () => {
+            isMovingRight = false;
+        });
 
         function createItem() {
             const item = document.createElement('div');
             const type = Math.random();
-            
+
             if (type < 0.6) {
                 item.className = 'item coin';
-            } else if (type < 0.8) {
+            } else if (type < 0.😎 {
                 item.className = 'item power-up';
             } else {
                 item.className = 'item obstacle';
@@ -190,28 +195,19 @@
             document.querySelector('.game-container').appendChild(item);
 
             let itemY = 0;
-            let rotation = 0;
             const interval = setInterval(() => {
                 itemY += 3;
-                rotation += 5;
                 item.style.top = itemY + 'px';
-                item.style.transform = `rotate(${rotation}deg)`;
 
                 if (itemY >= 370) {
                     const itemX = parseInt(item.style.left);
                     if (itemX >= playerX - 20 && itemX <= playerX + 80) {
                         if (item.classList.contains('coin')) {
                             score += 1;
-                            showEffect(itemX, 350, '+1', '#FFD700');
                         } else if (item.classList.contains('power-up')) {
-                            activateShield();
                             score += 5;
-                            showEffect(itemX, 350, '+5', '#FF1493');
-                            speed = baseSpeed * 1.5;
-                            setTimeout(() => speed = baseSpeed, 5000);
-                        } else if (!isShielded) {
+                        } else {
                             lives--;
-                            showEffect(itemX, 350, '-1', '#FF0000');
                             if (lives <= 0) {
                                 alert('Game Over! Score: ' + score);
                                 location.reload();
@@ -227,6 +223,7 @@
 
         setInterval(createItem, 800);
         updateStats();
+        gameLoop();
     </script>
 </body>
 </html>
